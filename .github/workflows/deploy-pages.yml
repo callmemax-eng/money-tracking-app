@@ -28,6 +28,7 @@ jobs:
         run: |
           mkdir -p _site
           cp -r index.html style.css app.js manifest.json service-worker.js icons _site/
+          sed -i "s/__CACHE_VERSION__/${GITHUB_SHA}/" _site/service-worker.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

@@ -1,4 +1,4 @@
-var CACHE_NAME = "ledger-cache-v1";
+var CACHE_NAME = "ledger-cache-__CACHE_VERSION__";
 var ASSETS = [
   "./",
   "./index.html",
@@ -32,16 +32,15 @@ self.addEventListener("activate", function (event) {
 self.addEventListener("fetch", function (event) {
   if (event.request.method !== "GET") return;
   event.respondWith(
-    caches.match(event.request).then(function (cached) {
-      var fetchPromise = fetch(event.request)
-        .then(function (networkResponse) {
-          caches.open(CACHE_NAME).then(function (cache) {
-            cache.put(event.request, networkResponse.clone());
-          });
-          return networkResponse;
-        })
-        .catch(function () { return cached; });
-      return cached || fetchPromise;
-    })
+    fetch(event.request)
+      .then(function (networkResponse) {
+        caches.open(CACHE_NAME).then(function (cache) {
+          cache.put(event.request, networkResponse.clone());
+        });
+        return networkResponse;
+      })
+      .catch(function () {
+        return caches.match(event.request);
+      })
   );
 });
