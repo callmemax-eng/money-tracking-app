@@ -72,15 +72,16 @@
           <input type="text" id="note" placeholder="e.g. coffee" autocomplete="off" maxlength="60" />
         </div>
 
-        <button type="submit" class="add-btn">+ ADD EXPENSE</button>
+        <button type="submit" class="add-btn" id="addBtn">+ ADD EXPENSE</button>
+        <button type="button" class="cancel-edit-btn" id="cancelEditBtn" hidden>CANCEL EDIT</button>
       </form>
 
       <div class="list-header">
-        <span>RECENT</span>
+        <span>TODAY</span>
         <span id="entryCount">0 entries</span>
       </div>
       <ul id="entryList" class="entry-list"></ul>
-      <p id="emptyState" class="empty-state">No expenses logged yet.<br />Add your first one above.</p>
+      <p id="emptyState" class="empty-state">No expenses logged today.<br />Add one above, or check HISTORY for past days.</p>
 
     </section>
 

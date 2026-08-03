@@ -69,6 +69,8 @@
   var entryCountEl = document.getElementById("entryCount");
   var emptyStateEl = document.getElementById("emptyState");
   var statusMsgEl = document.getElementById("statusMsg");
+  var addBtn = document.getElementById("addBtn");
+  var cancelEditBtn = document.getElementById("cancelEditBtn");
 
   var weekTotalEl = document.getElementById("weekTotal");
   var weekRangeEl = document.getElementById("weekRange");
@@ -122,6 +124,40 @@
 
   resetEntryDateField();
 
+  // ---------- edit mode ----------
+
+  var editingEntryId = null;
+
+  function enterEditMode(entry) {
+    editingEntryId = entry.id;
+    amountInput.value = entry.amount;
+    entryDateInput.value = entry.date;
+    entryDateInput.max = toLocalDateStr(new Date());
+    categoryInput.value = entry.category;
+    noteInput.value = entry.note || "";
+    addBtn.textContent = "✓ SAVE CHANGES";
+    cancelEditBtn.hidden = false;
+    entryForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    amountInput.focus();
+  }
+
+  function exitEditMode() {
+    editingEntryId = null;
+    addBtn.textContent = "+ ADD EXPENSE";
+    cancelEditBtn.hidden = true;
+  }
+
+  function resetForm() {
+    entryForm.reset();
+    categoryInput.value = "Food";
+    resetEntryDateField();
+  }
+
+  cancelEditBtn.addEventListener("click", function () {
+    resetForm();
+    exitEditMode();
+  });
+
   // ---------- form submit ----------
 
   entryForm.addEventListener("submit", function (e) {
@@ -135,24 +171,38 @@
     var now = new Date();
     var todayStr = toLocalDateStr(now);
     var entryDate = entryDateInput.value || todayStr;
-    var entry = {
-      id: Date.now() + "-" + Math.random().toString(36).slice(2, 8),
-      ts: entryDate === todayStr ? now.getTime() : dateStrToDate(entryDate).getTime(),
-      date: entryDate,
-      amount: Math.round(amount * 100) / 100,
-      category: categoryInput.value,
-      note: noteInput.value.trim()
-    };
-    entries.push(entry);
-    saveEntries(entries);
+    var roundedAmount = Math.round(amount * 100) / 100;
+    var computedTs = entryDate === todayStr ? now.getTime() : dateStrToDate(entryDate).getTime();
 
-    entryForm.reset();
-    categoryInput.value = "Food";
-    resetEntryDateField();
+    if (editingEntryId) {
+      var existing = entries.find(function (en) { return en.id === editingEntryId; });
+      if (existing) {
+        existing.amount = roundedAmount;
+        existing.date = entryDate;
+        existing.ts = computedTs;
+        existing.category = categoryInput.value;
+        existing.note = noteInput.value.trim();
+        saveEntries(entries);
+        setStatus("Updated $" + existing.amount.toFixed(2) + " (" + existing.category + ").");
+      }
+      exitEditMode();
+    } else {
+      var entry = {
+        id: Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+        ts: computedTs,
+        date: entryDate,
+        amount: roundedAmount,
+        category: categoryInput.value,
+        note: noteInput.value.trim()
+      };
+      entries.push(entry);
+      saveEntries(entries);
+      var dateNote = entryDate === todayStr ? "" : " for " + formatShort(dateStrToDate(entryDate));
+      setStatus("Saved $" + entry.amount.toFixed(2) + " to " + entry.category + dateNote + ".");
+    }
+
+    resetForm();
     amountInput.focus();
-
-    var dateNote = entryDate === todayStr ? "" : " for " + formatShort(dateStrToDate(entryDate));
-    setStatus("Saved $" + entry.amount.toFixed(2) + " to " + entry.category + dateNote + ".");
     renderAll();
   });
 
@@ -165,12 +215,25 @@
     if (!window.confirm("Remove this expense?")) return;
     entries = entries.filter(function (en) { return en.id !== id; });
     saveEntries(entries);
+    if (editingEntryId === id) {
+      resetForm();
+      exitEditMode();
+    }
     setStatus("Removed.");
     renderAll();
   }
 
   entryListEl.addEventListener("click", handleDeleteClick);
   historyListEl.addEventListener("click", handleDeleteClick);
+
+  function handleEditClick(e) {
+    var btn = e.target.closest(".entry-edit");
+    if (!btn) return;
+    var entry = entries.find(function (en) { return en.id === btn.dataset.id; });
+    if (entry) enterEditMode(entry);
+  }
+
+  entryListEl.addEventListener("click", handleEditClick);
 
   // ---------- render: entry list ----------
 
@@ -180,7 +243,7 @@
     return div.innerHTML;
   }
 
-  function buildEntryRowHTML(en, todayStr) {
+  function buildEntryRowHTML(en, todayStr, showEdit) {
     var dateTag = en.date === todayStr ? "" : formatShort(dateStrToDate(en.date)) + " — ";
     var noteText = dateTag + (en.note || "");
     return (
@@ -190,25 +253,26 @@
           (noteText ? '<div class="entry-note">' + escapeHtml(noteText) + "</div>" : "") +
         "</div>" +
         '<div class="entry-amount">$' + en.amount.toFixed(2) + "</div>" +
+        (showEdit ? '<button class="entry-edit" data-id="' + en.id + '" aria-label="Edit">&#9998;</button>' : "") +
         '<button class="entry-delete" data-id="' + en.id + '" aria-label="Delete">&times;</button>' +
       "</li>"
     );
   }
 
   function renderEntryList() {
-    var sorted = entries.slice().sort(function (a, b) { return b.ts - a.ts; });
     var todayStr = toLocalDateStr(new Date());
+    var todayEntries = entries
+      .filter(function (en) { return en.date === todayStr; })
+      .sort(function (a, b) { return b.ts - a.ts; });
 
-    entryCountEl.textContent = entries.length + (entries.length === 1 ? " entry" : " entries");
-    emptyStateEl.style.display = sorted.length === 0 ? "block" : "none";
+    entryCountEl.textContent = todayEntries.length + (todayEntries.length === 1 ? " entry" : " entries");
+    emptyStateEl.style.display = todayEntries.length === 0 ? "block" : "none";
 
-    entryListEl.innerHTML = sorted.slice(0, 100).map(function (en) {
-      return buildEntryRowHTML(en, todayStr);
+    entryListEl.innerHTML = todayEntries.map(function (en) {
+      return buildEntryRowHTML(en, todayStr, true);
     }).join("");
 
-    var todayTotal = entries
-      .filter(function (en) { return en.date === todayStr; })
-      .reduce(function (sum, en) { return sum + en.amount; }, 0);
+    var todayTotal = todayEntries.reduce(function (sum, en) { return sum + en.amount; }, 0);
     todayTotalEl.textContent = todayTotal.toFixed(2);
   }
 
