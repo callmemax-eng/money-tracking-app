@@ -438,8 +438,14 @@
       if (isStandalonePWA()) {
         // iOS (and some other) home-screen "standalone" apps can't open the
         // system print sheet at all — window.print() silently no-ops there.
-        // Opening the page in a real browser tab escapes that limitation.
+        // A plain target="_blank" link doesn't reliably escape standalone
+        // mode either (it can just reload the same window). On iOS, the
+        // x-safari-https scheme forces a hand-off to real Safari, where
+        // printing actually works.
         var url = location.origin + location.pathname + "?print=" + period;
+        if (window.navigator.standalone === true) {
+          url = url.replace(/^https:/, "x-safari-https:").replace(/^http:/, "x-safari-http:");
+        }
         var a = document.createElement("a");
         a.href = url;
         a.target = "_blank";
@@ -447,7 +453,7 @@
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        setStatus("Opening in your browser to print…");
+        setStatus("Opening in Safari to print…");
       } else {
         triggerPrint(period);
       }
