@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: ["claude/expense-tracker-app-96fw3t"]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
