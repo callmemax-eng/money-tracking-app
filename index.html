@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Ledger</title>
+<meta name="theme-color" content="#ffffff" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="apple-mobile-web-app-title" content="Ledger" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icons/icon-180.png" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="screen">
+
+  <header class="titlebar">
+    <div class="titlebar-lines"></div>
+    <div class="titlebar-box"></div>
+    <h1>LEDGER</h1>
+    <div class="titlebar-box"></div>
+    <div class="titlebar-lines"></div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="log">LOG</button>
+    <button class="tab-btn" data-tab="summary">SUMMARY</button>
+  </nav>
+
+  <main>
+
+    <!-- LOG VIEW -->
+    <section id="tab-log" class="tab-panel active">
+
+      <div class="today-strip">
+        <span id="todayDate">—</span>
+        <span class="today-total">TODAY: $<span id="todayTotal">0.00</span></span>
+      </div>
+
+      <form id="entryForm" class="entry-form">
+        <div class="field">
+          <label for="amount">AMOUNT</label>
+          <div class="amount-row">
+            <span class="dollar">$</span>
+            <input type="number" id="amount" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="category">CATEGORY</label>
+          <select id="category">
+            <option>Food</option>
+            <option>Transport</option>
+            <option>Shopping</option>
+            <option>Bills</option>
+            <option>Fun</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="note">NOTE <span class="optional">(optional)</span></label>
+          <input type="text" id="note" placeholder="e.g. coffee" autocomplete="off" maxlength="60" />
+        </div>
+
+        <button type="submit" class="add-btn">+ ADD EXPENSE</button>
+      </form>
+
+      <div class="list-header">
+        <span>RECENT</span>
+        <span id="entryCount">0 entries</span>
+      </div>
+      <ul id="entryList" class="entry-list"></ul>
+      <p id="emptyState" class="empty-state">No expenses logged yet.<br />Add your first one above.</p>
+
+    </section>
+
+    <!-- SUMMARY VIEW -->
+    <section id="tab-summary" class="tab-panel">
+
+      <div class="summary-cards">
+        <div class="summary-card">
+          <div class="summary-label">THIS WEEK</div>
+          <div class="summary-amount">$<span id="weekTotal">0.00</span></div>
+          <div class="summary-sub" id="weekRange">—</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">THIS MONTH</div>
+          <div class="summary-amount">$<span id="monthTotal">0.00</span></div>
+          <div class="summary-sub" id="monthRange">—</div>
+        </div>
+      </div>
+
+      <div class="list-header"><span>LAST 7 DAYS</span></div>
+      <div id="weekChart" class="bar-chart"></div>
+
+      <div class="list-header"><span>BY CATEGORY (THIS MONTH)</span></div>
+      <div id="categoryBreakdown" class="category-list"></div>
+      <p id="summaryEmpty" class="empty-state">Nothing to summarize yet.</p>
+
+    </section>
+
+  </main>
+
+  <footer class="statusbar">
+    <span id="statusMsg">Ready.</span>
+  </footer>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
