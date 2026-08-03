@@ -62,6 +62,8 @@
   var todayTotalEl = document.getElementById("todayTotal");
   var entryForm = document.getElementById("entryForm");
   var amountInput = document.getElementById("amount");
+  var entryDateInput = document.getElementById("entryDate");
+  var dateChips = document.querySelectorAll(".date-chip");
   var categoryInput = document.getElementById("category");
   var noteInput = document.getElementById("note");
   var entryListEl = document.getElementById("entryList");
@@ -111,6 +113,40 @@
     todayDateEl.textContent = weekday + ", " + formatShort(now);
   }
 
+  // ---------- entry date field (defaults to today, quick-pick yesterday) ----------
+
+  function resetEntryDateField() {
+    var todayStr = toLocalDateStr(new Date());
+    entryDateInput.value = todayStr;
+    entryDateInput.max = todayStr;
+    syncDateChips();
+  }
+
+  function syncDateChips() {
+    var now = new Date();
+    var todayStr = toLocalDateStr(now);
+    var yesterdayStr = toLocalDateStr(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+    dateChips.forEach(function (chip) {
+      var isToday = chip.dataset.quick === "today" && entryDateInput.value === todayStr;
+      var isYesterday = chip.dataset.quick === "yesterday" && entryDateInput.value === yesterdayStr;
+      chip.classList.toggle("active", isToday || isYesterday);
+    });
+  }
+
+  dateChips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      var now = new Date();
+      var target = chip.dataset.quick === "yesterday"
+        ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+        : now;
+      entryDateInput.value = toLocalDateStr(target);
+      syncDateChips();
+    });
+  });
+
+  entryDateInput.addEventListener("change", syncDateChips);
+  resetEntryDateField();
+
   // ---------- form submit ----------
 
   entryForm.addEventListener("submit", function (e) {
@@ -122,10 +158,12 @@
       return;
     }
     var now = new Date();
+    var todayStr = toLocalDateStr(now);
+    var entryDate = entryDateInput.value || todayStr;
     var entry = {
       id: Date.now() + "-" + Math.random().toString(36).slice(2, 8),
-      ts: now.getTime(),
-      date: toLocalDateStr(now),
+      ts: entryDate === todayStr ? now.getTime() : dateStrToDate(entryDate).getTime(),
+      date: entryDate,
       amount: Math.round(amount * 100) / 100,
       category: categoryInput.value,
       note: noteInput.value.trim()
@@ -135,9 +173,11 @@
 
     entryForm.reset();
     categoryInput.value = "Food";
+    resetEntryDateField();
     amountInput.focus();
 
-    setStatus("Saved $" + entry.amount.toFixed(2) + " to " + entry.category + ".");
+    var dateNote = entryDate === todayStr ? "" : " for " + formatShort(dateStrToDate(entryDate));
+    setStatus("Saved $" + entry.amount.toFixed(2) + " to " + entry.category + dateNote + ".");
     renderAll();
   });
 
