@@ -79,6 +79,9 @@
   var printAreaEl = document.getElementById("printArea");
   var historyListEl = document.getElementById("historyList");
   var historyEmptyEl = document.getElementById("historyEmpty");
+  var monthSelectorEl = document.getElementById("monthSelector");
+  var historyMonthLabelEl = document.getElementById("historyMonthLabel");
+  var historyMonthTotalEl = document.getElementById("historyMonthTotal");
   var exportCsvBtn = document.getElementById("exportCsvBtn");
   var exportBackupBtn = document.getElementById("exportBackupBtn");
   var restoreBackupBtn = document.getElementById("restoreBackupBtn");
@@ -196,6 +199,20 @@
 
   // ---------- render: history (by month) ----------
 
+  var selectedHistoryMonth = null;
+
+  function monthKeyLabel(key) {
+    var parts = key.split("-");
+    return MONTH_NAMES[parseInt(parts[1], 10) - 1] + " " + parts[0];
+  }
+
+  monthSelectorEl.addEventListener("click", function (e) {
+    var chip = e.target.closest(".month-chip");
+    if (!chip) return;
+    selectedHistoryMonth = chip.dataset.month;
+    renderHistory();
+  });
+
   function renderHistory() {
     var todayStr = toLocalDateStr(new Date());
     var byMonth = {};
@@ -206,27 +223,35 @@
     });
     var monthKeys = Object.keys(byMonth).sort().reverse();
 
-    historyEmptyEl.style.display = monthKeys.length === 0 ? "block" : "none";
+    if (monthKeys.length === 0) {
+      monthSelectorEl.innerHTML = "";
+      historyMonthLabelEl.textContent = "—";
+      historyMonthTotalEl.textContent = "$0.00";
+      historyListEl.innerHTML = "";
+      historyEmptyEl.style.display = "block";
+      return;
+    }
+    historyEmptyEl.style.display = "none";
 
-    historyListEl.innerHTML = monthKeys.map(function (key, idx) {
-      var monthEntries = byMonth[key].slice().sort(function (a, b) { return b.ts - a.ts; });
-      var total = monthEntries.reduce(function (s, en) { return s + en.amount; }, 0);
-      var parts = key.split("-");
-      var label = MONTH_NAMES[parseInt(parts[1], 10) - 1] + " " + parts[0];
-      var rowsHtml = monthEntries.map(function (en) {
-        return buildEntryRowHTML(en, todayStr);
-      }).join("");
+    if (!selectedHistoryMonth || monthKeys.indexOf(selectedHistoryMonth) === -1) {
+      selectedHistoryMonth = monthKeys[0];
+    }
 
-      return (
-        '<details class="month-block"' + (idx === 0 ? " open" : "") + ">" +
-          '<summary class="month-summary">' +
-            '<span class="month-name">' + label + "</span>" +
-            '<span class="month-stats">' + monthEntries.length +
-              (monthEntries.length === 1 ? " entry" : " entries") + " · $" + total.toFixed(2) + "</span>" +
-          "</summary>" +
-          '<ul class="month-entries">' + rowsHtml + "</ul>" +
-        "</details>"
-      );
+    monthSelectorEl.innerHTML = monthKeys.map(function (key) {
+      var active = key === selectedHistoryMonth ? " active" : "";
+      return '<button type="button" class="month-chip' + active + '" data-month="' + key + '">' +
+        monthKeyLabel(key) + "</button>";
+    }).join("");
+
+    var monthEntries = byMonth[selectedHistoryMonth].slice().sort(function (a, b) { return b.ts - a.ts; });
+    var total = monthEntries.reduce(function (s, en) { return s + en.amount; }, 0);
+
+    historyMonthLabelEl.textContent = monthKeyLabel(selectedHistoryMonth) +
+      " · " + monthEntries.length + (monthEntries.length === 1 ? " entry" : " entries");
+    historyMonthTotalEl.textContent = "$" + total.toFixed(2);
+
+    historyListEl.innerHTML = monthEntries.map(function (en) {
+      return buildEntryRowHTML(en, todayStr);
     }).join("");
   }
 

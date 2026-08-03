@@ -327,55 +327,43 @@ input:focus, select:focus {
 }
 
 /* ---------- history (by month) ---------- */
-.month-block {
+.month-selector {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  margin-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.month-chip {
+  flex: 0 0 auto;
+  padding: 8px 16px;
   border: 1.5px solid var(--black);
-  margin-bottom: 10px;
+  background: var(--white);
+  color: var(--black);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-.month-block[open] {
-  padding-bottom: 4px;
+.month-chip.active {
+  background: var(--black);
+  color: var(--white);
 }
 
-.month-summary {
+.history-statement-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 10px 12px;
-  cursor: pointer;
+  align-items: baseline;
+  border-bottom: 1.5px solid var(--black);
+  padding-bottom: 6px;
+  margin: 10px 0 4px;
   font-weight: 700;
-  font-size: 13px;
-  list-style: none;
-}
-
-.month-summary::-webkit-details-marker {
-  display: none;
-}
-
-.month-summary::before {
-  content: "▸";
-  margin-right: 8px;
-  font-size: 11px;
-}
-
-.month-block[open] .month-summary::before {
-  content: "▾";
-}
-
-.month-name {
-  flex: 1;
-}
-
-.month-stats {
-  font-weight: 400;
-  font-size: 11px;
-  color: var(--gray-dark);
-  white-space: nowrap;
-}
-
-.month-entries {
-  list-style: none;
-  margin: 0;
-  padding: 0 12px;
+  font-size: 14px;
 }
 
 /* ---------- summary cards ---------- */

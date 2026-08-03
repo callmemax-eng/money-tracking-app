@@ -82,8 +82,13 @@
     <!-- HISTORY VIEW -->
     <section id="tab-history" class="tab-panel">
 
-      <div class="list-header"><span>BY MONTH</span></div>
-      <div id="historyList" class="history-list"></div>
+      <div id="monthSelector" class="month-selector"></div>
+
+      <div class="history-statement-header">
+        <span id="historyMonthLabel">—</span>
+        <span id="historyMonthTotal">$0.00</span>
+      </div>
+      <ul id="historyList" class="entry-list"></ul>
       <p id="historyEmpty" class="empty-state">No expenses logged yet.</p>
 
     </section>
