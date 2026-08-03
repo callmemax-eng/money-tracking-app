@@ -407,12 +407,46 @@
     );
   }
 
+  function isStandalonePWA() {
+    return window.navigator.standalone === true ||
+      (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  }
+
+  function triggerPrint(period) {
+    printAreaEl.innerHTML = buildReceiptHTML(period);
+    window.print();
+  }
+
   document.querySelectorAll("[data-print]").forEach(function (btn) {
     btn.addEventListener("click", function () {
-      printAreaEl.innerHTML = buildReceiptHTML(btn.dataset.print);
-      window.print();
+      var period = btn.dataset.print;
+      if (isStandalonePWA()) {
+        // iOS (and some other) home-screen "standalone" apps can't open the
+        // system print sheet at all — window.print() silently no-ops there.
+        // Opening the page in a real browser tab escapes that limitation.
+        var url = location.origin + location.pathname + "?print=" + period;
+        var a = document.createElement("a");
+        a.href = url;
+        a.target = "_blank";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setStatus("Opening in your browser to print…");
+      } else {
+        triggerPrint(period);
+      }
     });
   });
+
+  // If opened via the standalone-mode print fallback above, print automatically.
+  var autoPrintPeriod = new URLSearchParams(window.location.search).get("print");
+  if (autoPrintPeriod === "week" || autoPrintPeriod === "month") {
+    window.addEventListener("load", function () {
+      history.replaceState(null, "", location.pathname);
+      setTimeout(function () { triggerPrint(autoPrintPeriod); }, 300);
+    });
+  }
 
   // ---------- export / backup / restore ----------
 
