@@ -326,6 +326,58 @@ input:focus, select:focus {
   line-height: 1.6;
 }
 
+/* ---------- history (by month) ---------- */
+.month-block {
+  border: 1.5px solid var(--black);
+  margin-bottom: 10px;
+}
+
+.month-block[open] {
+  padding-bottom: 4px;
+}
+
+.month-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+  list-style: none;
+}
+
+.month-summary::-webkit-details-marker {
+  display: none;
+}
+
+.month-summary::before {
+  content: "▸";
+  margin-right: 8px;
+  font-size: 11px;
+}
+
+.month-block[open] .month-summary::before {
+  content: "▾";
+}
+
+.month-name {
+  flex: 1;
+}
+
+.month-stats {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--gray-dark);
+  white-space: nowrap;
+}
+
+.month-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0 12px;
+}
+
 /* ---------- summary cards ---------- */
 .summary-cards {
   display: flex;
@@ -437,6 +489,38 @@ input:focus, select:focus {
 .category-bar-fill {
   height: 100%;
   background: var(--black);
+}
+
+/* ---------- data actions (export / backup / restore) ---------- */
+.data-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.data-btn {
+  width: 100%;
+  padding: 9px;
+  background: var(--white);
+  color: var(--black);
+  border: 1.5px solid var(--black);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.data-btn:active {
+  background: var(--black);
+  color: var(--white);
+}
+
+.data-hint {
+  font-size: 10px;
+  color: var(--gray-dark);
+  margin: 8px 0 4px;
+  line-height: 1.5;
 }
 
 /* ---------- status bar ---------- */

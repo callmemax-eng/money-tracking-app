@@ -77,6 +77,12 @@
   var categoryBreakdownEl = document.getElementById("categoryBreakdown");
   var summaryEmptyEl = document.getElementById("summaryEmpty");
   var printAreaEl = document.getElementById("printArea");
+  var historyListEl = document.getElementById("historyList");
+  var historyEmptyEl = document.getElementById("historyEmpty");
+  var exportCsvBtn = document.getElementById("exportCsvBtn");
+  var exportBackupBtn = document.getElementById("exportBackupBtn");
+  var restoreBackupBtn = document.getElementById("restoreBackupBtn");
+  var restoreFileInput = document.getElementById("restoreFileInput");
 
   var tabButtons = document.querySelectorAll(".tab-btn");
   var tabPanels = document.querySelectorAll(".tab-panel");
@@ -90,6 +96,7 @@
       btn.classList.add("active");
       document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
       if (btn.dataset.tab === "summary") renderSummary();
+      if (btn.dataset.tab === "history") renderHistory();
     });
   });
 
@@ -133,7 +140,7 @@
 
   // ---------- delete ----------
 
-  entryListEl.addEventListener("click", function (e) {
+  function handleDeleteClick(e) {
     var btn = e.target.closest(".entry-delete");
     if (!btn) return;
     var id = btn.dataset.id;
@@ -142,40 +149,44 @@
     saveEntries(entries);
     setStatus("Removed.");
     renderAll();
-  });
+  }
+
+  entryListEl.addEventListener("click", handleDeleteClick);
+  historyListEl.addEventListener("click", handleDeleteClick);
 
   // ---------- render: entry list ----------
 
-  function renderEntryList() {
-    var sorted = entries.slice().sort(function (a, b) { return b.ts - a.ts; });
-    var todayStr = toLocalDateStr(new Date());
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
 
-    entryListEl.innerHTML = "";
-    entryCountEl.textContent = entries.length + (entries.length === 1 ? " entry" : " entries");
-
-    if (sorted.length === 0) {
-      emptyStateEl.style.display = "block";
-    } else {
-      emptyStateEl.style.display = "none";
-    }
-
-    sorted.slice(0, 100).forEach(function (en) {
-      var li = document.createElement("li");
-      li.className = "entry-row";
-
-      var dateTag = en.date === todayStr ? "" : formatShort(dateStrToDate(en.date)) + " — ";
-      var noteText = dateTag + (en.note || "");
-
-      li.innerHTML =
+  function buildEntryRowHTML(en, todayStr) {
+    var dateTag = en.date === todayStr ? "" : formatShort(dateStrToDate(en.date)) + " — ";
+    var noteText = dateTag + (en.note || "");
+    return (
+      '<li class="entry-row">' +
         '<div class="entry-main">' +
           '<div class="entry-category">' + escapeHtml(en.category) + "</div>" +
           (noteText ? '<div class="entry-note">' + escapeHtml(noteText) + "</div>" : "") +
         "</div>" +
         '<div class="entry-amount">$' + en.amount.toFixed(2) + "</div>" +
-        '<button class="entry-delete" data-id="' + en.id + '" aria-label="Delete">&times;</button>';
+        '<button class="entry-delete" data-id="' + en.id + '" aria-label="Delete">&times;</button>' +
+      "</li>"
+    );
+  }
 
-      entryListEl.appendChild(li);
-    });
+  function renderEntryList() {
+    var sorted = entries.slice().sort(function (a, b) { return b.ts - a.ts; });
+    var todayStr = toLocalDateStr(new Date());
+
+    entryCountEl.textContent = entries.length + (entries.length === 1 ? " entry" : " entries");
+    emptyStateEl.style.display = sorted.length === 0 ? "block" : "none";
+
+    entryListEl.innerHTML = sorted.slice(0, 100).map(function (en) {
+      return buildEntryRowHTML(en, todayStr);
+    }).join("");
 
     var todayTotal = entries
       .filter(function (en) { return en.date === todayStr; })
@@ -183,10 +194,40 @@
     todayTotalEl.textContent = todayTotal.toFixed(2);
   }
 
-  function escapeHtml(str) {
-    var div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
+  // ---------- render: history (by month) ----------
+
+  function renderHistory() {
+    var todayStr = toLocalDateStr(new Date());
+    var byMonth = {};
+    entries.forEach(function (en) {
+      var key = en.date.slice(0, 7);
+      if (!byMonth[key]) byMonth[key] = [];
+      byMonth[key].push(en);
+    });
+    var monthKeys = Object.keys(byMonth).sort().reverse();
+
+    historyEmptyEl.style.display = monthKeys.length === 0 ? "block" : "none";
+
+    historyListEl.innerHTML = monthKeys.map(function (key, idx) {
+      var monthEntries = byMonth[key].slice().sort(function (a, b) { return b.ts - a.ts; });
+      var total = monthEntries.reduce(function (s, en) { return s + en.amount; }, 0);
+      var parts = key.split("-");
+      var label = MONTH_NAMES[parseInt(parts[1], 10) - 1] + " " + parts[0];
+      var rowsHtml = monthEntries.map(function (en) {
+        return buildEntryRowHTML(en, todayStr);
+      }).join("");
+
+      return (
+        '<details class="month-block"' + (idx === 0 ? " open" : "") + ">" +
+          '<summary class="month-summary">' +
+            '<span class="month-name">' + label + "</span>" +
+            '<span class="month-stats">' + monthEntries.length +
+              (monthEntries.length === 1 ? " entry" : " entries") + " · $" + total.toFixed(2) + "</span>" +
+          "</summary>" +
+          '<ul class="month-entries">' + rowsHtml + "</ul>" +
+        "</details>"
+      );
+    }).join("");
   }
 
   // ---------- render: summary ----------
@@ -348,6 +389,112 @@
     });
   });
 
+  // ---------- export / backup / restore ----------
+
+  function downloadFile(content, filename, mimeType) {
+    var blob = new Blob([content], { type: mimeType });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function csvEscape(val) {
+    var s = String(val);
+    if (/[",\n]/.test(s)) {
+      s = '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  exportCsvBtn.addEventListener("click", function () {
+    if (!entries.length) {
+      setStatus("No data to export.");
+      return;
+    }
+    var sorted = entries.slice().sort(function (a, b) { return a.ts - b.ts; });
+    var rows = [["Date", "Category", "Note", "Amount"]];
+    sorted.forEach(function (en) {
+      rows.push([en.date, en.category, en.note || "", en.amount.toFixed(2)]);
+    });
+    var csv = rows.map(function (row) { return row.map(csvEscape).join(","); }).join("\r\n");
+    downloadFile(csv, "ledger-export-" + toLocalDateStr(new Date()) + ".csv", "text/csv");
+    setStatus("Exported " + sorted.length + " entries to CSV.");
+  });
+
+  exportBackupBtn.addEventListener("click", function () {
+    if (!entries.length) {
+      setStatus("No data to back up.");
+      return;
+    }
+    downloadFile(
+      JSON.stringify(entries, null, 2),
+      "ledger-backup-" + toLocalDateStr(new Date()) + ".json",
+      "application/json"
+    );
+    setStatus("Backup downloaded (" + entries.length + " entries).");
+  });
+
+  restoreBackupBtn.addEventListener("click", function () {
+    restoreFileInput.click();
+  });
+
+  restoreFileInput.addEventListener("change", function () {
+    var file = restoreFileInput.files[0];
+    restoreFileInput.value = "";
+    if (!file) return;
+
+    var reader = new FileReader();
+    reader.onload = function () {
+      var imported;
+      try {
+        imported = JSON.parse(reader.result);
+      } catch (e) {
+        setStatus("Restore failed: not a valid backup file.");
+        return;
+      }
+      if (!Array.isArray(imported)) {
+        setStatus("Restore failed: not a valid backup file.");
+        return;
+      }
+
+      var existingIds = {};
+      entries.forEach(function (en) { existingIds[en.id] = true; });
+
+      var added = 0;
+      imported.forEach(function (en) {
+        if (
+          en && typeof en === "object" &&
+          typeof en.id === "string" &&
+          typeof en.date === "string" &&
+          typeof en.amount === "number" &&
+          typeof en.category === "string" &&
+          !existingIds[en.id]
+        ) {
+          entries.push({
+            id: en.id,
+            ts: typeof en.ts === "number" ? en.ts : dateStrToDate(en.date).getTime(),
+            date: en.date,
+            amount: en.amount,
+            category: en.category,
+            note: typeof en.note === "string" ? en.note : ""
+          });
+          existingIds[en.id] = true;
+          added++;
+        }
+      });
+
+      if (added > 0) saveEntries(entries);
+      setStatus(added > 0 ? "Restored " + added + " new entries." : "Nothing new to restore.");
+      renderAll();
+    };
+    reader.readAsText(file);
+  });
+
   // ---------- status bar ----------
 
   var statusTimer = null;
@@ -364,6 +511,7 @@
   function renderAll() {
     renderHeaderDate();
     renderEntryList();
+    renderHistory();
     renderSummary();
   }
 

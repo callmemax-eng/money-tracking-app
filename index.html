@@ -27,6 +27,7 @@
 
   <nav class="tabs">
     <button class="tab-btn active" data-tab="log">LOG</button>
+    <button class="tab-btn" data-tab="history">HISTORY</button>
     <button class="tab-btn" data-tab="summary">SUMMARY</button>
   </nav>
 
@@ -78,6 +79,15 @@
 
     </section>
 
+    <!-- HISTORY VIEW -->
+    <section id="tab-history" class="tab-panel">
+
+      <div class="list-header"><span>BY MONTH</span></div>
+      <div id="historyList" class="history-list"></div>
+      <p id="historyEmpty" class="empty-state">No expenses logged yet.</p>
+
+    </section>
+
     <!-- SUMMARY VIEW -->
     <section id="tab-summary" class="tab-panel">
 
@@ -102,6 +112,15 @@
       <div class="list-header"><span>BY CATEGORY (THIS MONTH)</span></div>
       <div id="categoryBreakdown" class="category-list"></div>
       <p id="summaryEmpty" class="empty-state">Nothing to summarize yet.</p>
+
+      <div class="list-header"><span>YOUR DATA</span></div>
+      <div class="data-actions">
+        <button type="button" id="exportCsvBtn" class="data-btn">⬇ EXPORT CSV</button>
+        <button type="button" id="exportBackupBtn" class="data-btn">⬇ BACKUP (JSON)</button>
+        <button type="button" id="restoreBackupBtn" class="data-btn">⬆ RESTORE BACKUP</button>
+        <input type="file" id="restoreFileInput" accept="application/json" hidden />
+      </div>
+      <p class="data-hint">CSV opens in Sheets/Excel. JSON backup can be restored here later or on a new device.</p>
 
     </section>
 
