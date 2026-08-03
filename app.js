@@ -63,7 +63,6 @@
   var entryForm = document.getElementById("entryForm");
   var amountInput = document.getElementById("amount");
   var entryDateInput = document.getElementById("entryDate");
-  var dateChips = document.querySelectorAll(".date-chip");
   var categoryInput = document.getElementById("category");
   var noteInput = document.getElementById("note");
   var entryListEl = document.getElementById("entryList");
@@ -113,38 +112,14 @@
     todayDateEl.textContent = weekday + ", " + formatShort(now);
   }
 
-  // ---------- entry date field (defaults to today, quick-pick yesterday) ----------
+  // ---------- entry date field (defaults to today, editable) ----------
 
   function resetEntryDateField() {
     var todayStr = toLocalDateStr(new Date());
     entryDateInput.value = todayStr;
     entryDateInput.max = todayStr;
-    syncDateChips();
   }
 
-  function syncDateChips() {
-    var now = new Date();
-    var todayStr = toLocalDateStr(now);
-    var yesterdayStr = toLocalDateStr(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
-    dateChips.forEach(function (chip) {
-      var isToday = chip.dataset.quick === "today" && entryDateInput.value === todayStr;
-      var isYesterday = chip.dataset.quick === "yesterday" && entryDateInput.value === yesterdayStr;
-      chip.classList.toggle("active", isToday || isYesterday);
-    });
-  }
-
-  dateChips.forEach(function (chip) {
-    chip.addEventListener("click", function () {
-      var now = new Date();
-      var target = chip.dataset.quick === "yesterday"
-        ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
-        : now;
-      entryDateInput.value = toLocalDateStr(target);
-      syncDateChips();
-    });
-  });
-
-  entryDateInput.addEventListener("change", syncDateChips);
   resetEntryDateField();
 
   // ---------- form submit ----------
