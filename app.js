@@ -50,6 +50,12 @@
     return MONTH_NAMES[d.getMonth()] + " " + d.getDate();
   }
 
+  function formatMD(d) {
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return m + "/" + day;
+  }
+
   // ---------- DOM refs ----------
 
   var todayDateEl = document.getElementById("todayDate");
@@ -70,6 +76,7 @@
   var weekChartEl = document.getElementById("weekChart");
   var categoryBreakdownEl = document.getElementById("categoryBreakdown");
   var summaryEmptyEl = document.getElementById("summaryEmpty");
+  var printAreaEl = document.getElementById("printArea");
 
   var tabButtons = document.querySelectorAll(".tab-btn");
   var tabPanels = document.querySelectorAll(".tab-panel");
@@ -250,6 +257,96 @@
 
     summaryEmptyEl.style.display = monthEntries.length === 0 ? "block" : "none";
   }
+
+  // ---------- printable statement ----------
+
+  function getPeriodEntries(period) {
+    var now = new Date();
+    if (period === "week") {
+      var monday = startOfWeek(now);
+      var sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+      var filtered = entries.filter(function (en) {
+        var d = dateStrToDate(en.date);
+        return d >= monday && d <= sunday;
+      });
+      return {
+        entries: filtered,
+        title: "WEEKLY STATEMENT",
+        range: formatShort(monday) + " – " + formatShort(sunday) + ", " + now.getFullYear()
+      };
+    }
+    var monthFiltered = entries.filter(function (en) {
+      var d = dateStrToDate(en.date);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    });
+    return {
+      entries: monthFiltered,
+      title: "MONTHLY STATEMENT",
+      range: MONTH_NAMES[now.getMonth()] + " " + now.getFullYear()
+    };
+  }
+
+  function buildReceiptHTML(period) {
+    var info = getPeriodEntries(period);
+    var sorted = info.entries.slice().sort(function (a, b) { return a.ts - b.ts; });
+    var total = sorted.reduce(function (s, en) { return s + en.amount; }, 0);
+
+    var rowsHtml = sorted.map(function (en) {
+      var desc = en.category + (en.note ? " — " + en.note : "");
+      return (
+        '<div class="receipt-row">' +
+          '<span class="r-date">' + formatMD(dateStrToDate(en.date)) + "</span>" +
+          '<span class="r-desc">' + escapeHtml(desc) + "</span>" +
+          '<span class="r-amt">$' + en.amount.toFixed(2) + "</span>" +
+        "</div>"
+      );
+    }).join("");
+
+    if (!sorted.length) {
+      rowsHtml = '<div class="receipt-row"><span class="r-desc">No expenses in this period.</span></div>';
+    }
+
+    var byCategory = {};
+    sorted.forEach(function (en) {
+      byCategory[en.category] = (byCategory[en.category] || 0) + en.amount;
+    });
+    var cats = Object.keys(byCategory).sort(function (a, b) { return byCategory[b] - byCategory[a]; });
+    var catHtml = cats.map(function (cat) {
+      return '<div class="receipt-cat-row"><span>' + escapeHtml(cat) + "</span><span>$" +
+        byCategory[cat].toFixed(2) + "</span></div>";
+    }).join("");
+
+    var now = new Date();
+    var printedAt = formatShort(now) + ", " + now.getFullYear() + " " +
+      now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    return (
+      '<div class="receipt">' +
+        '<div class="receipt-center">' +
+          '<div class="receipt-title">LEDGER</div>' +
+          '<div class="receipt-subtitle">' + info.title + "</div>" +
+          '<div class="receipt-meta">' + info.range + "</div>" +
+          '<div class="receipt-meta">Printed ' + printedAt + "</div>" +
+        "</div>" +
+        '<hr class="receipt-divider" />' +
+        rowsHtml +
+        '<div class="receipt-total-row"><span>TOTAL</span><span>$' + total.toFixed(2) + "</span></div>" +
+        '<div class="receipt-count">' + sorted.length + (sorted.length === 1 ? " transaction" : " transactions") + "</div>" +
+        (cats.length
+          ? '<hr class="receipt-divider" /><div class="receipt-cat-row"><strong>BY CATEGORY</strong></div>' + catHtml
+          : "") +
+        '<hr class="receipt-divider" />' +
+        '<div class="receipt-footer">* * * END OF STATEMENT * * *</div>' +
+      "</div>"
+    );
+  }
+
+  document.querySelectorAll("[data-print]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      printAreaEl.innerHTML = buildReceiptHTML(btn.dataset.print);
+      window.print();
+    });
+  });
 
   // ---------- status bar ----------
 

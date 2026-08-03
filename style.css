@@ -358,6 +358,25 @@ input:focus, select:focus {
   margin-top: 4px;
 }
 
+.print-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 6px;
+  background: var(--white);
+  color: var(--black);
+  border: 1.5px solid var(--black);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.print-btn:active {
+  background: var(--black);
+  color: var(--white);
+}
+
 /* ---------- bar chart (last 7 days) ---------- */
 .bar-chart {
   display: flex;
@@ -432,4 +451,126 @@ input:focus, select:focus {
 /* small screens: keep tight spacing */
 @media (max-width: 360px) {
   .titlebar h1 { letter-spacing: 2px; font-size: 13px; }
+}
+
+/* ============================================================
+   PRINTABLE STATEMENT (receipt)
+   ============================================================ */
+
+.print-area {
+  display: none;
+}
+
+.receipt {
+  font-family: "SF Mono", Menlo, Monaco, "Courier New", monospace;
+  color: var(--black);
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.receipt-center {
+  text-align: center;
+}
+
+.receipt-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  margin: 0 0 4px;
+}
+
+.receipt-subtitle {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin: 0 0 10px;
+}
+
+.receipt-meta {
+  font-size: 11px;
+  margin: 2px 0;
+}
+
+.receipt-divider {
+  border: none;
+  border-top: 1px dashed var(--black);
+  margin: 12px 0;
+}
+
+.receipt-row {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  padding: 4px 0;
+  border-bottom: 1px dotted var(--black);
+}
+
+.receipt-row .r-date {
+  flex: 0 0 52px;
+  color: var(--gray-dark);
+}
+
+.receipt-row .r-desc {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.receipt-row .r-amt {
+  flex: 0 0 60px;
+  text-align: right;
+  font-weight: 700;
+}
+
+.receipt-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: 700;
+  padding-top: 8px;
+}
+
+.receipt-count {
+  text-align: center;
+  font-size: 10px;
+  color: var(--gray-dark);
+  margin-top: 4px;
+}
+
+.receipt-cat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  padding: 3px 0;
+}
+
+.receipt-footer {
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 1px;
+  margin-top: 16px;
+}
+
+@media print {
+  html, body {
+    background: var(--white);
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-area, .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 0.25in;
+    background: var(--white);
+  }
+  @page {
+    margin: 0.5in;
+  }
 }

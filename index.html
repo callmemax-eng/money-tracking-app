@@ -86,11 +86,13 @@
           <div class="summary-label">THIS WEEK</div>
           <div class="summary-amount">$<span id="weekTotal">0.00</span></div>
           <div class="summary-sub" id="weekRange">—</div>
+          <button type="button" class="print-btn" data-print="week">🖨 PRINT STATEMENT</button>
         </div>
         <div class="summary-card">
           <div class="summary-label">THIS MONTH</div>
           <div class="summary-amount">$<span id="monthTotal">0.00</span></div>
           <div class="summary-sub" id="monthRange">—</div>
+          <button type="button" class="print-btn" data-print="month">🖨 PRINT STATEMENT</button>
         </div>
       </div>
 
@@ -110,6 +112,8 @@
   </footer>
 
 </div>
+
+<div id="printArea" class="print-area"></div>
 
 <script src="app.js"></script>
 </body>
