@@ -589,6 +589,10 @@ input:focus, select:focus {
   padding-top: 4px;
 }
 
+.qr-wrap[hidden] {
+  display: none;
+}
+
 .qr-wrap canvas {
   width: 100%;
   max-width: 240px;
