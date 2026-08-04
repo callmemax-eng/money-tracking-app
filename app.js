@@ -89,6 +89,7 @@
   var exportBackupBtn = document.getElementById("exportBackupBtn");
   var restoreBackupBtn = document.getElementById("restoreBackupBtn");
   var restoreFileInput = document.getElementById("restoreFileInput");
+  var shareBtn = document.getElementById("shareBtn");
 
   var tabButtons = document.querySelectorAll(".tab-btn");
   var tabPanels = document.querySelectorAll(".tab-panel");
@@ -660,6 +661,27 @@
       renderAll();
     };
     reader.readAsText(file);
+  });
+
+  // ---------- share ----------
+
+  shareBtn.addEventListener("click", function () {
+    var shareData = {
+      title: "Ledger",
+      text: "Track your daily expenses with Ledger.",
+      url: location.origin + location.pathname
+    };
+    if (navigator.share) {
+      navigator.share(shareData).catch(function () {});
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareData.url)
+        .then(function () { setStatus("Link copied to clipboard."); })
+        .catch(function () { setStatus("Couldn't copy — copy the link from your address bar."); });
+      return;
+    }
+    setStatus("Sharing isn't supported here — copy the link from your address bar.");
   });
 
   // ---------- status bar ----------

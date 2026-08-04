@@ -555,6 +555,30 @@ input:focus, select:focus {
   line-height: 1.5;
 }
 
+/* ---------- share bar ---------- */
+.share-bar {
+  border-top: 2px solid var(--black);
+  padding: 10px 14px;
+}
+
+.share-btn {
+  width: 100%;
+  padding: 10px;
+  background: var(--white);
+  color: var(--black);
+  border: 1.5px solid var(--black);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+}
+
+.share-btn:active {
+  background: var(--black);
+  color: var(--white);
+}
+
 /* ---------- status bar ---------- */
 .statusbar {
   border-top: 2px solid var(--black);
