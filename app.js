@@ -243,8 +243,8 @@
     return div.innerHTML;
   }
 
-  function buildEntryRowHTML(en, todayStr, showEdit) {
-    var dateTag = en.date === todayStr ? "" : formatShort(dateStrToDate(en.date)) + " — ";
+  function buildEntryRowHTML(en, todayStr, showEdit, hideDateTag) {
+    var dateTag = (hideDateTag || en.date === todayStr) ? "" : formatShort(dateStrToDate(en.date)) + " — ";
     var noteText = dateTag + (en.note || "");
     return (
       '<li class="entry-row">' +
@@ -322,15 +322,38 @@
         monthKeyLabel(key) + "</button>";
     }).join("");
 
-    var monthEntries = byMonth[selectedHistoryMonth].slice().sort(function (a, b) { return b.ts - a.ts; });
+    var monthEntries = byMonth[selectedHistoryMonth].slice();
     var total = monthEntries.reduce(function (s, en) { return s + en.amount; }, 0);
 
     historyMonthLabelEl.textContent = monthKeyLabel(selectedHistoryMonth) +
       " · " + monthEntries.length + (monthEntries.length === 1 ? " entry" : " entries");
     historyMonthTotalEl.textContent = "$" + total.toFixed(2);
 
-    historyListEl.innerHTML = monthEntries.map(function (en) {
-      return buildEntryRowHTML(en, todayStr);
+    // group the month's entries by day, so it reads as daily totals
+    // instead of one long pile of transactions
+    var byDay = {};
+    monthEntries.forEach(function (en) {
+      if (!byDay[en.date]) byDay[en.date] = [];
+      byDay[en.date].push(en);
+    });
+    var dayKeys = Object.keys(byDay).sort().reverse();
+    var DOW_FULL = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+    historyListEl.innerHTML = dayKeys.map(function (dateKey) {
+      var dayEntries = byDay[dateKey].slice().sort(function (a, b) { return b.ts - a.ts; });
+      var dayTotal = dayEntries.reduce(function (s, en) { return s + en.amount; }, 0);
+      var d = dateStrToDate(dateKey);
+      var dayLabel = DOW_FULL[d.getDay()] + ", " + formatShort(d);
+      var rowsHtml = dayEntries.map(function (en) {
+        return buildEntryRowHTML(en, todayStr, false, true);
+      }).join("");
+
+      return (
+        '<div class="day-block">' +
+          '<div class="day-header"><span>' + dayLabel + "</span><span>$" + dayTotal.toFixed(2) + "</span></div>" +
+          '<ul class="day-entries">' + rowsHtml + "</ul>" +
+        "</div>"
+      );
     }).join("");
   }
 
