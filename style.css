@@ -557,6 +557,9 @@ input:focus, select:focus {
 
 /* ---------- share bar ---------- */
 .share-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   border-top: 2px solid var(--black);
   padding: 10px 14px;
 }
@@ -577,6 +580,29 @@ input:focus, select:focus {
 .share-btn:active {
   background: var(--black);
   color: var(--white);
+}
+
+.qr-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 4px;
+}
+
+.qr-wrap canvas {
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  border: 2px solid var(--black);
+  background: var(--white);
+}
+
+.qr-hint {
+  margin: 8px 0 0;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--gray-dark);
+  text-align: center;
 }
 
 /* ---------- status bar ---------- */

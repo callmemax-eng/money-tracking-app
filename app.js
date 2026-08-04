@@ -90,6 +90,9 @@
   var restoreBackupBtn = document.getElementById("restoreBackupBtn");
   var restoreFileInput = document.getElementById("restoreFileInput");
   var shareBtn = document.getElementById("shareBtn");
+  var qrBtn = document.getElementById("qrBtn");
+  var qrWrap = document.getElementById("qrWrap");
+  var qrCanvas = document.getElementById("qrCanvas");
 
   var tabButtons = document.querySelectorAll(".tab-btn");
   var tabPanels = document.querySelectorAll(".tab-panel");
@@ -682,6 +685,84 @@
       return;
     }
     setStatus("Sharing isn't supported here — copy the link from your address bar.");
+  });
+
+  // ---------- QR code (grain/sand styled) ----------
+
+  var qrRendered = false;
+
+  function isFinderModule(row, col, count) {
+    var inTopLeft = row < 7 && col < 7;
+    var inTopRight = row < 7 && col >= count - 7;
+    var inBottomLeft = row >= count - 7 && col < 7;
+    return inTopLeft || inTopRight || inBottomLeft;
+  }
+
+  function renderQRCode(text) {
+    var qr = qrcode(0, "H");
+    qr.addData(text);
+    qr.make();
+
+    var count = qr.getModuleCount();
+    var moduleSize = 10;
+    var margin = 4;
+    var size = (count + margin * 2) * moduleSize;
+
+    qrCanvas.width = size;
+    qrCanvas.height = size;
+    var ctx = qrCanvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = "#000000";
+
+    for (var row = 0; row < count; row++) {
+      for (var col = 0; col < count; col++) {
+        if (!qr.isDark(row, col)) continue;
+        var x = (col + margin) * moduleSize;
+        var y = (row + margin) * moduleSize;
+
+        if (isFinderModule(row, col, count)) {
+          // finder squares stay solid — scanners rely on their crisp shape
+          ctx.fillRect(x, y, moduleSize, moduleSize);
+          continue;
+        }
+
+        // everything else: an irregular cluster of overlapping blobs,
+        // dense enough to scan but rounded enough to read as "grain"
+        var cx = x + moduleSize / 2;
+        var cy = y + moduleSize / 2;
+        ctx.beginPath();
+        ctx.arc(
+          cx + (Math.random() - 0.5) * moduleSize * 0.1,
+          cy + (Math.random() - 0.5) * moduleSize * 0.1,
+          moduleSize * 0.5, 0, Math.PI * 2
+        );
+        ctx.fill();
+        for (var i = 0; i < 6; i++) {
+          var angle = Math.random() * Math.PI * 2;
+          var dist = Math.random() * moduleSize * 0.35;
+          var r = moduleSize * (0.2 + Math.random() * 0.12);
+          ctx.beginPath();
+          ctx.arc(cx + Math.cos(angle) * dist, cy + Math.sin(angle) * dist, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+  }
+
+  qrBtn.addEventListener("click", function () {
+    var showing = !qrWrap.hidden;
+    if (showing) {
+      qrWrap.hidden = true;
+      qrBtn.textContent = "▦ SHOW QR CODE";
+      return;
+    }
+    if (!qrRendered) {
+      renderQRCode(location.origin + location.pathname);
+      qrRendered = true;
+    }
+    qrWrap.hidden = false;
+    qrBtn.textContent = "▦ HIDE QR CODE";
   });
 
   // ---------- status bar ----------

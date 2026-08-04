@@ -139,6 +139,11 @@
 
   <div class="share-bar">
     <button type="button" class="share-btn" id="shareBtn">⤴ SHARE APP</button>
+    <button type="button" class="share-btn" id="qrBtn">▦ SHOW QR CODE</button>
+    <div id="qrWrap" class="qr-wrap" hidden>
+      <canvas id="qrCanvas"></canvas>
+      <p class="qr-hint">Scan to open Ledger</p>
+    </div>
   </div>
 
   <footer class="statusbar">
@@ -149,6 +154,7 @@
 
 <div id="printArea" class="print-area"></div>
 
+<script src="qrcode.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
