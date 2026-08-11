@@ -442,6 +442,16 @@ input:focus, select:focus {
   margin-top: 4px;
 }
 
+.range-picker {
+  display: flex;
+  gap: 10px;
+}
+
+.range-picker .field {
+  flex: 1;
+  margin-bottom: 0;
+}
+
 .print-btn {
   width: 100%;
   margin-top: 10px;

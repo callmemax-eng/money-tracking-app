@@ -80,6 +80,9 @@
   var categoryBreakdownEl = document.getElementById("categoryBreakdown");
   var summaryEmptyEl = document.getElementById("summaryEmpty");
   var printAreaEl = document.getElementById("printArea");
+  var rangeStartInput = document.getElementById("rangeStart");
+  var rangeEndInput = document.getElementById("rangeEnd");
+  var printRangeBtn = document.getElementById("printRangeBtn");
   var historyListEl = document.getElementById("historyList");
   var historyEmptyEl = document.getElementById("historyEmpty");
   var monthSelectorEl = document.getElementById("monthSelector");
@@ -430,9 +433,32 @@
     summaryEmptyEl.style.display = monthEntries.length === 0 ? "block" : "none";
   }
 
+  // ---------- custom statement range ----------
+
+  (function initRangePicker() {
+    var todayStr = toLocalDateStr(new Date());
+    var now = new Date();
+    var firstOfMonth = toLocalDateStr(new Date(now.getFullYear(), now.getMonth(), 1));
+    rangeStartInput.value = firstOfMonth;
+    rangeEndInput.value = todayStr;
+    rangeStartInput.max = todayStr;
+    rangeEndInput.max = todayStr;
+
+    rangeStartInput.addEventListener("change", function () {
+      rangeEndInput.min = rangeStartInput.value;
+      if (rangeEndInput.value && rangeEndInput.value < rangeStartInput.value) {
+        rangeEndInput.value = rangeStartInput.value;
+      }
+    });
+    rangeEndInput.addEventListener("change", function () {
+      rangeStartInput.max = rangeEndInput.value < todayStr ? rangeEndInput.value : todayStr;
+    });
+    rangeEndInput.min = rangeStartInput.value;
+  })();
+
   // ---------- printable statement ----------
 
-  function getPeriodEntries(period) {
+  function getPeriodEntries(period, rangeStart, rangeEnd) {
     var now = new Date();
     if (period === "week") {
       var monday = startOfWeek(now);
@@ -447,6 +473,27 @@
         range: formatShort(monday) + " – " + formatShort(sunday) + ", " + now.getFullYear()
       };
     }
+    if (period === "custom") {
+      var start = dateStrToDate(rangeStart);
+      var end = dateStrToDate(rangeEnd);
+      var customFiltered = entries.filter(function (en) {
+        var d = dateStrToDate(en.date);
+        return d >= start && d <= end;
+      });
+      var rangeLabel;
+      if (rangeStart === rangeEnd) {
+        rangeLabel = formatShort(start) + ", " + start.getFullYear();
+      } else if (start.getFullYear() === end.getFullYear()) {
+        rangeLabel = formatShort(start) + " – " + formatShort(end) + ", " + end.getFullYear();
+      } else {
+        rangeLabel = formatShort(start) + ", " + start.getFullYear() + " – " + formatShort(end) + ", " + end.getFullYear();
+      }
+      return {
+        entries: customFiltered,
+        title: "STATEMENT",
+        range: rangeLabel
+      };
+    }
     var monthFiltered = entries.filter(function (en) {
       var d = dateStrToDate(en.date);
       return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
@@ -458,8 +505,8 @@
     };
   }
 
-  function buildReceiptHTML(period) {
-    var info = getPeriodEntries(period);
+  function buildReceiptHTML(period, rangeStart, rangeEnd) {
+    var info = getPeriodEntries(period, rangeStart, rangeEnd);
     var sorted = info.entries.slice().sort(function (a, b) { return a.ts - b.ts; });
     var total = sorted.reduce(function (s, en) { return s + en.amount; }, 0);
 
@@ -518,45 +565,73 @@
       (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
   }
 
-  function triggerPrint(period) {
-    printAreaEl.innerHTML = buildReceiptHTML(period);
+  function triggerPrint(period, rangeStart, rangeEnd) {
+    printAreaEl.innerHTML = buildReceiptHTML(period, rangeStart, rangeEnd);
     window.print();
+  }
+
+  function openPrint(period, rangeStart, rangeEnd) {
+    if (isStandalonePWA()) {
+      // iOS (and some other) home-screen "standalone" apps can't open the
+      // system print sheet at all — window.print() silently no-ops there.
+      // A plain target="_blank" link doesn't reliably escape standalone
+      // mode either (it can just reload the same window). On iOS, the
+      // x-safari-https scheme forces a hand-off to real Safari, where
+      // printing actually works.
+      var url = location.origin + location.pathname + "?print=" + period;
+      if (period === "custom") {
+        url += "&start=" + rangeStart + "&end=" + rangeEnd;
+      }
+      if (window.navigator.standalone === true) {
+        url = url.replace(/^https:/, "x-safari-https:").replace(/^http:/, "x-safari-http:");
+      }
+      var a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setStatus("Opening in Safari to print…");
+    } else {
+      triggerPrint(period, rangeStart, rangeEnd);
+    }
   }
 
   document.querySelectorAll("[data-print]").forEach(function (btn) {
     btn.addEventListener("click", function () {
-      var period = btn.dataset.print;
-      if (isStandalonePWA()) {
-        // iOS (and some other) home-screen "standalone" apps can't open the
-        // system print sheet at all — window.print() silently no-ops there.
-        // A plain target="_blank" link doesn't reliably escape standalone
-        // mode either (it can just reload the same window). On iOS, the
-        // x-safari-https scheme forces a hand-off to real Safari, where
-        // printing actually works.
-        var url = location.origin + location.pathname + "?print=" + period;
-        if (window.navigator.standalone === true) {
-          url = url.replace(/^https:/, "x-safari-https:").replace(/^http:/, "x-safari-http:");
-        }
-        var a = document.createElement("a");
-        a.href = url;
-        a.target = "_blank";
-        a.rel = "noopener";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setStatus("Opening in Safari to print…");
-      } else {
-        triggerPrint(period);
-      }
+      openPrint(btn.dataset.print);
     });
   });
 
+  printRangeBtn.addEventListener("click", function () {
+    var start = rangeStartInput.value;
+    var end = rangeEndInput.value;
+    if (!start || !end) {
+      setStatus("Pick both a start and end date.");
+      return;
+    }
+    if (start > end) {
+      setStatus("Start date must be before the end date.");
+      return;
+    }
+    openPrint("custom", start, end);
+  });
+
   // If opened via the standalone-mode print fallback above, print automatically.
-  var autoPrintPeriod = new URLSearchParams(window.location.search).get("print");
+  var printParams = new URLSearchParams(window.location.search);
+  var autoPrintPeriod = printParams.get("print");
   if (autoPrintPeriod === "week" || autoPrintPeriod === "month") {
     window.addEventListener("load", function () {
       history.replaceState(null, "", location.pathname);
       setTimeout(function () { triggerPrint(autoPrintPeriod); }, 300);
+    });
+  } else if (autoPrintPeriod === "custom" && printParams.get("start") && printParams.get("end")) {
+    var autoStart = printParams.get("start");
+    var autoEnd = printParams.get("end");
+    window.addEventListener("load", function () {
+      history.replaceState(null, "", location.pathname);
+      setTimeout(function () { triggerPrint("custom", autoStart, autoEnd); }, 300);
     });
   }
 
