@@ -92,6 +92,8 @@
   var exportBackupBtn = document.getElementById("exportBackupBtn");
   var restoreBackupBtn = document.getElementById("restoreBackupBtn");
   var restoreFileInput = document.getElementById("restoreFileInput");
+  var shareToggleBtn = document.getElementById("shareToggleBtn");
+  var sharePanel = document.getElementById("sharePanel");
   var shareBtn = document.getElementById("shareBtn");
   var qrBtn = document.getElementById("qrBtn");
   var qrWrap = document.getElementById("qrWrap");
@@ -838,6 +840,19 @@
     }
     qrWrap.hidden = false;
     qrBtn.textContent = "▦ HIDE QR CODE";
+  });
+
+  shareToggleBtn.addEventListener("click", function () {
+    var showing = !sharePanel.hidden;
+    if (showing) {
+      sharePanel.hidden = true;
+      shareToggleBtn.textContent = "⤴ SHARE";
+      qrWrap.hidden = true;
+      qrBtn.textContent = "▦ SHOW QR CODE";
+      return;
+    }
+    sharePanel.hidden = false;
+    shareToggleBtn.textContent = "✕ CLOSE";
   });
 
   // ---------- status bar ----------

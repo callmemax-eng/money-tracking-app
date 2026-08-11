@@ -151,11 +151,14 @@
   </main>
 
   <div class="share-bar">
-    <button type="button" class="share-btn" id="shareBtn">⤴ SHARE APP</button>
-    <button type="button" class="share-btn" id="qrBtn">▦ SHOW QR CODE</button>
-    <div id="qrWrap" class="qr-wrap" hidden>
-      <canvas id="qrCanvas"></canvas>
-      <p class="qr-hint">Scan to open Ledger</p>
+    <button type="button" class="share-toggle-btn" id="shareToggleBtn">⤴ SHARE</button>
+    <div id="sharePanel" class="share-panel" hidden>
+      <button type="button" class="share-btn" id="shareBtn">⤴ SHARE APP</button>
+      <button type="button" class="share-btn" id="qrBtn">▦ SHOW QR CODE</button>
+      <div id="qrWrap" class="qr-wrap" hidden>
+        <canvas id="qrCanvas"></canvas>
+        <p class="qr-hint">Scan to open Ledger</p>
+      </div>
     </div>
   </div>
 
