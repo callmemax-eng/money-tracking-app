@@ -2,6 +2,8 @@
   "use strict";
 
   var STORAGE_KEY = "ledger_expenses_v1";
+  var LAST_BACKUP_KEY = "ledger_last_backup_v1";
+  var BACKUP_REMINDER_DAYS = 7;
   var DOW_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
   var MONTH_NAMES = [
     "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
@@ -92,6 +94,9 @@
   var exportBackupBtn = document.getElementById("exportBackupBtn");
   var restoreBackupBtn = document.getElementById("restoreBackupBtn");
   var restoreFileInput = document.getElementById("restoreFileInput");
+  var backupReminderEl = document.getElementById("backupReminder");
+  var backupReminderTextEl = document.getElementById("backupReminderText");
+  var backupReminderBtn = document.getElementById("backupReminderBtn");
   var shareToggleBtn = document.getElementById("shareToggleBtn");
   var sharePanel = document.getElementById("sharePanel");
   var shareBtn = document.getElementById("shareBtn");
@@ -674,6 +679,35 @@
     setStatus("Exported " + sorted.length + " entries to CSV.");
   });
 
+  function markBackedUp() {
+    localStorage.setItem(LAST_BACKUP_KEY, String(Date.now()));
+    renderBackupReminder();
+  }
+
+  function renderBackupReminder() {
+    if (!entries.length) {
+      backupReminderEl.hidden = true;
+      return;
+    }
+    var lastBackupRaw = localStorage.getItem(LAST_BACKUP_KEY);
+    var lastBackupTs = lastBackupRaw ? parseInt(lastBackupRaw, 10) : null;
+    var daysSince = lastBackupTs ? Math.floor((Date.now() - lastBackupTs) / 86400000) : null;
+
+    if (daysSince !== null && daysSince < BACKUP_REMINDER_DAYS) {
+      backupReminderEl.hidden = true;
+      return;
+    }
+
+    backupReminderTextEl.textContent = daysSince === null
+      ? "⚠ You've never backed up. Your data only lives on this device."
+      : "⚠ Last backup: " + daysSince + " day" + (daysSince === 1 ? "" : "s") + " ago.";
+    backupReminderEl.hidden = false;
+  }
+
+  backupReminderBtn.addEventListener("click", function () {
+    exportBackupBtn.click();
+  });
+
   exportBackupBtn.addEventListener("click", function () {
     if (!entries.length) {
       setStatus("No data to back up.");
@@ -685,6 +719,7 @@
       "application/json"
     );
     setStatus("Backup downloaded (" + entries.length + " entries).");
+    markBackedUp();
   });
 
   restoreBackupBtn.addEventListener("click", function () {
@@ -736,7 +771,10 @@
         }
       });
 
-      if (added > 0) saveEntries(entries);
+      if (added > 0) {
+        saveEntries(entries);
+        markBackedUp();
+      }
       setStatus(added > 0 ? "Restored " + added + " new entries." : "Nothing new to restore.");
       renderAll();
     };
@@ -873,6 +911,7 @@
     renderEntryList();
     renderHistory();
     renderSummary();
+    renderBackupReminder();
   }
 
   renderAll();

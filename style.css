@@ -424,6 +424,42 @@ input:focus, select:focus {
   text-align: center;
 }
 
+.backup-reminder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 2px solid var(--black);
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.backup-reminder[hidden] {
+  display: none;
+}
+
+.backup-reminder span {
+  flex: 1;
+}
+
+.backup-reminder button {
+  background: var(--black);
+  color: var(--white);
+  border: none;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.backup-reminder button:active {
+  opacity: 0.7;
+}
+
 .summary-label {
   font-size: 10px;
   font-weight: 700;
