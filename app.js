@@ -109,15 +109,15 @@
 
   // ---------- tabs ----------
 
+  function switchTab(tabName) {
+    tabButtons.forEach(function (b) { b.classList.toggle("active", b.dataset.tab === tabName); });
+    tabPanels.forEach(function (p) { p.classList.toggle("active", p.id === "tab-" + tabName); });
+    if (tabName === "summary") renderSummary();
+    if (tabName === "history") renderHistory();
+  }
+
   tabButtons.forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      tabButtons.forEach(function (b) { b.classList.remove("active"); });
-      tabPanels.forEach(function (p) { p.classList.remove("active"); });
-      btn.classList.add("active");
-      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
-      if (btn.dataset.tab === "summary") renderSummary();
-      if (btn.dataset.tab === "history") renderHistory();
-    });
+    btn.addEventListener("click", function () { switchTab(btn.dataset.tab); });
   });
 
   // ---------- header date ----------
@@ -143,6 +143,7 @@
   var editingEntryId = null;
 
   function enterEditMode(entry) {
+    switchTab("log");
     editingEntryId = entry.id;
     amountInput.value = entry.amount;
     entryDateInput.value = entry.date;
@@ -248,6 +249,7 @@
   }
 
   entryListEl.addEventListener("click", handleEditClick);
+  historyListEl.addEventListener("click", handleEditClick);
 
   // ---------- render: entry list ----------
 
@@ -359,7 +361,7 @@
       var d = dateStrToDate(dateKey);
       var dayLabel = DOW_FULL[d.getDay()] + ", " + formatShort(d);
       var rowsHtml = dayEntries.map(function (en) {
-        return buildEntryRowHTML(en, todayStr, false, true);
+        return buildEntryRowHTML(en, todayStr, true, true);
       }).join("");
 
       return (
