@@ -4,6 +4,8 @@
   var STORAGE_KEY = "ledger_expenses_v1";
   var LAST_BACKUP_KEY = "ledger_last_backup_v1";
   var BACKUP_REMINDER_DAYS = 7;
+  var BUDGET_KEY = "ledger_budget_v1";
+  var BUDGET_ALMOST_PERCENT = 90;
   var DOW_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
   var MONTH_NAMES = [
     "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
@@ -25,7 +27,25 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
   }
 
+  function loadBudget() {
+    try {
+      var raw = localStorage.getItem(BUDGET_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveBudgetData(b) {
+    localStorage.setItem(BUDGET_KEY, JSON.stringify(b));
+  }
+
+  function clearBudgetData() {
+    localStorage.removeItem(BUDGET_KEY);
+  }
+
   var entries = loadEntries();
+  var budget = loadBudget();
 
   // ---------- date helpers (local time, not UTC) ----------
 
@@ -52,6 +72,18 @@
     return MONTH_NAMES[d.getMonth()] + " " + d.getDate();
   }
 
+  function formatDateRangeLabel(rangeStart, rangeEnd) {
+    var start = dateStrToDate(rangeStart);
+    var end = dateStrToDate(rangeEnd);
+    if (rangeStart === rangeEnd) {
+      return formatShort(start) + ", " + start.getFullYear();
+    }
+    if (start.getFullYear() === end.getFullYear()) {
+      return formatShort(start) + " – " + formatShort(end) + ", " + end.getFullYear();
+    }
+    return formatShort(start) + ", " + start.getFullYear() + " – " + formatShort(end) + ", " + end.getFullYear();
+  }
+
   function formatMD(d) {
     var m = String(d.getMonth() + 1).padStart(2, "0");
     var day = String(d.getDate()).padStart(2, "0");
@@ -73,6 +105,25 @@
   var statusMsgEl = document.getElementById("statusMsg");
   var addBtn = document.getElementById("addBtn");
   var cancelEditBtn = document.getElementById("cancelEditBtn");
+
+  var budgetEditBtn = document.getElementById("budgetEditBtn");
+  var budgetWidgetEl = document.getElementById("budgetWidget");
+  var budgetEmptyEl = document.getElementById("budgetEmpty");
+  var budgetRangeLabelEl = document.getElementById("budgetRangeLabel");
+  var budgetBarFillEl = document.getElementById("budgetBarFill");
+  var budgetSpentEl = document.getElementById("budgetSpent");
+  var budgetAmountLabelEl = document.getElementById("budgetAmountLabel");
+  var budgetLeftTextEl = document.getElementById("budgetLeftText");
+  var budgetFormEl = document.getElementById("budgetForm");
+  var budgetAmountInput = document.getElementById("budgetAmount");
+  var budgetStartInput = document.getElementById("budgetStart");
+  var budgetEndInput = document.getElementById("budgetEnd");
+  var budgetSaveBtn = document.getElementById("budgetSaveBtn");
+  var budgetClearBtn = document.getElementById("budgetClearBtn");
+  var budgetPopupEl = document.getElementById("budgetPopup");
+  var budgetPopupTitleEl = document.getElementById("budgetPopupTitle");
+  var budgetPopupMessageEl = document.getElementById("budgetPopupMessage");
+  var budgetPopupOkBtn = document.getElementById("budgetPopupOkBtn");
 
   var weekTotalEl = document.getElementById("weekTotal");
   var weekRangeEl = document.getElementById("weekRange");
@@ -173,6 +224,129 @@
     exitEditMode();
   });
 
+  // ---------- budget ----------
+
+  function computeBudgetStatus(b) {
+    var start = dateStrToDate(b.start);
+    var end = dateStrToDate(b.end);
+    var spent = entries
+      .filter(function (en) {
+        var d = dateStrToDate(en.date);
+        return d >= start && d <= end;
+      })
+      .reduce(function (sum, en) { return sum + en.amount; }, 0);
+    var remaining = b.amount - spent;
+    var percent = b.amount > 0 ? (spent / b.amount) * 100 : 0;
+    var status = remaining < 0 ? "over" : (percent >= BUDGET_ALMOST_PERCENT ? "almost" : "ok");
+    return { spent: spent, remaining: remaining, percent: percent, status: status };
+  }
+
+  function renderBudget() {
+    if (!budget) {
+      budgetWidgetEl.hidden = true;
+      budgetEmptyEl.style.display = "block";
+      budgetEditBtn.textContent = "SET BUDGET";
+      return;
+    }
+    budgetEmptyEl.style.display = "none";
+    budgetEditBtn.textContent = "EDIT";
+
+    var s = computeBudgetStatus(budget);
+    budgetRangeLabelEl.textContent = formatDateRangeLabel(budget.start, budget.end);
+    budgetSpentEl.textContent = s.spent.toFixed(2);
+    budgetAmountLabelEl.textContent = budget.amount.toFixed(2);
+    budgetBarFillEl.style.width = Math.min(100, s.percent) + "%";
+    budgetBarFillEl.classList.toggle("budget-bar-fill--almost", s.status === "almost");
+    budgetLeftTextEl.textContent = s.status === "over"
+      ? "OVER BY $" + Math.abs(s.remaining).toFixed(2)
+      : "LEFT $" + s.remaining.toFixed(2);
+
+    budgetWidgetEl.hidden = false;
+  }
+
+  budgetEditBtn.addEventListener("click", function () {
+    if (!budgetFormEl.hidden) {
+      budgetFormEl.hidden = true;
+      return;
+    }
+    if (budget) {
+      budgetAmountInput.value = budget.amount;
+      budgetStartInput.value = budget.start;
+      budgetEndInput.value = budget.end;
+      budgetClearBtn.hidden = false;
+    } else {
+      var now = new Date();
+      budgetAmountInput.value = "";
+      budgetStartInput.value = toLocalDateStr(new Date(now.getFullYear(), now.getMonth(), 1));
+      budgetEndInput.value = toLocalDateStr(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+      budgetClearBtn.hidden = true;
+    }
+    budgetEndInput.min = budgetStartInput.value;
+    budgetFormEl.hidden = false;
+  });
+
+  budgetStartInput.addEventListener("change", function () {
+    budgetEndInput.min = budgetStartInput.value;
+    if (budgetEndInput.value && budgetEndInput.value < budgetStartInput.value) {
+      budgetEndInput.value = budgetStartInput.value;
+    }
+  });
+
+  budgetSaveBtn.addEventListener("click", function () {
+    var amount = parseFloat(budgetAmountInput.value);
+    var start = budgetStartInput.value;
+    var end = budgetEndInput.value;
+    if (!amount || amount <= 0) {
+      setStatus("Enter a budget amount greater than 0.");
+      budgetAmountInput.focus();
+      return;
+    }
+    if (!start || !end) {
+      setStatus("Choose a start and end date for the budget.");
+      return;
+    }
+    if (end < start) end = start;
+
+    budget = { amount: Math.round(amount * 100) / 100, start: start, end: end };
+    saveBudgetData(budget);
+    budgetFormEl.hidden = true;
+    setStatus("Budget set: $" + budget.amount.toFixed(2) + ".");
+    renderBudget();
+  });
+
+  budgetClearBtn.addEventListener("click", function () {
+    if (!window.confirm("Remove the current budget?")) return;
+    budget = null;
+    clearBudgetData();
+    budgetFormEl.hidden = true;
+    setStatus("Budget cleared.");
+    renderBudget();
+  });
+
+  function showBudgetPopup(status, spent, amount, remaining) {
+    var title, message;
+    if (status === "over") {
+      title = "✕ OVER BUDGET";
+      message = "You've spent $" + spent.toFixed(2) + " of your $" + amount.toFixed(2) +
+        " budget — that's $" + Math.abs(remaining).toFixed(2) + " over.";
+    } else if (status === "almost") {
+      title = "⚠ ALMOST AT BUDGET";
+      message = "You've spent $" + spent.toFixed(2) + " of your $" + amount.toFixed(2) +
+        " budget. Only $" + remaining.toFixed(2) + " left.";
+    } else {
+      title = "✓ STILL OKAY TO SPEND";
+      message = "You've spent $" + spent.toFixed(2) + " of your $" + amount.toFixed(2) +
+        " budget. $" + remaining.toFixed(2) + " left.";
+    }
+    budgetPopupTitleEl.textContent = title;
+    budgetPopupMessageEl.textContent = message;
+    budgetPopupEl.hidden = false;
+  }
+
+  budgetPopupOkBtn.addEventListener("click", function () {
+    budgetPopupEl.hidden = true;
+  });
+
   // ---------- form submit ----------
 
   entryForm.addEventListener("submit", function (e) {
@@ -219,6 +393,16 @@
     resetForm();
     amountInput.focus();
     renderAll();
+
+    if (budget) {
+      var entryDateObj = dateStrToDate(entryDate);
+      var budgetStartObj = dateStrToDate(budget.start);
+      var budgetEndObj = dateStrToDate(budget.end);
+      if (entryDateObj >= budgetStartObj && entryDateObj <= budgetEndObj) {
+        var s = computeBudgetStatus(budget);
+        showBudgetPopup(s.status, s.spent, budget.amount, s.remaining);
+      }
+    }
   });
 
   // ---------- delete ----------
@@ -489,18 +673,10 @@
         var d = dateStrToDate(en.date);
         return d >= start && d <= end;
       });
-      var rangeLabel;
-      if (rangeStart === rangeEnd) {
-        rangeLabel = formatShort(start) + ", " + start.getFullYear();
-      } else if (start.getFullYear() === end.getFullYear()) {
-        rangeLabel = formatShort(start) + " – " + formatShort(end) + ", " + end.getFullYear();
-      } else {
-        rangeLabel = formatShort(start) + ", " + start.getFullYear() + " – " + formatShort(end) + ", " + end.getFullYear();
-      }
       return {
         entries: customFiltered,
         title: "STATEMENT",
-        range: rangeLabel
+        range: formatDateRangeLabel(rangeStart, rangeEnd)
       };
     }
     var monthFiltered = entries.filter(function (en) {
@@ -914,6 +1090,7 @@
     renderHistory();
     renderSummary();
     renderBackupReminder();
+    renderBudget();
   }
 
   renderAll();

@@ -263,6 +263,121 @@ input:focus, select:focus {
   color: var(--white);
 }
 
+/* ---------- budget ---------- */
+.budget-edit-btn {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-decoration: underline;
+  color: var(--black);
+  cursor: pointer;
+  padding: 0;
+}
+
+.budget-widget {
+  border: 2px solid var(--black);
+  padding: 10px;
+  margin-bottom: 12px;
+}
+
+.budget-widget[hidden] {
+  display: none;
+}
+
+.budget-range {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.budget-bar-track {
+  border: 1.5px solid var(--black);
+  height: 14px;
+  margin-bottom: 8px;
+  background: var(--white);
+}
+
+.budget-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--black);
+}
+
+.budget-bar-fill--almost {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--black) 0px,
+    var(--black) 4px,
+    var(--white) 4px,
+    var(--white) 8px
+  );
+}
+
+.budget-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.budget-form {
+  border: 2px solid var(--black);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.budget-form[hidden] {
+  display: none;
+}
+
+/* ---------- status popup ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+.modal-overlay[hidden] {
+  display: none;
+}
+
+.modal-box {
+  background: var(--white);
+  border: 3px solid var(--black);
+  box-shadow: 4px 4px 0 var(--black);
+  width: 100%;
+  max-width: 320px;
+  padding: 18px;
+  text-align: center;
+}
+
+.modal-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.modal-message {
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.modal-box .add-btn {
+  width: 100%;
+}
+
 /* ---------- list header ---------- */
 .list-header {
   display: flex;

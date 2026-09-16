@@ -41,6 +41,44 @@
         <span class="today-total">TODAY: $<span id="todayTotal">0.00</span></span>
       </div>
 
+      <div class="list-header">
+        <span>BUDGET</span>
+        <button type="button" class="budget-edit-btn" id="budgetEditBtn">SET BUDGET</button>
+      </div>
+      <div id="budgetWidget" class="budget-widget" hidden>
+        <div class="budget-range" id="budgetRangeLabel">—</div>
+        <div class="budget-bar-track">
+          <div class="budget-bar-fill" id="budgetBarFill"></div>
+        </div>
+        <div class="budget-stats">
+          <span>SPENT $<span id="budgetSpent">0.00</span> OF $<span id="budgetAmountLabel">0.00</span></span>
+          <span id="budgetLeftText">LEFT $0.00</span>
+        </div>
+      </div>
+      <p id="budgetEmpty" class="empty-state">No budget set for a period yet.</p>
+
+      <div id="budgetForm" class="budget-form" hidden>
+        <div class="field">
+          <label for="budgetAmount">BUDGET AMOUNT</label>
+          <div class="amount-row">
+            <span class="dollar">$</span>
+            <input type="number" id="budgetAmount" inputmode="decimal" step="0.01" min="0" placeholder="0.00" />
+          </div>
+        </div>
+        <div class="range-picker">
+          <div class="field">
+            <label for="budgetStart">FROM</label>
+            <input type="date" id="budgetStart" />
+          </div>
+          <div class="field">
+            <label for="budgetEnd">TO</label>
+            <input type="date" id="budgetEnd" />
+          </div>
+        </div>
+        <button type="button" class="add-btn" id="budgetSaveBtn">✓ SAVE BUDGET</button>
+        <button type="button" class="cancel-edit-btn" id="budgetClearBtn" hidden>CLEAR BUDGET</button>
+      </div>
+
       <form id="entryForm" class="entry-form">
         <div class="field">
           <label for="amount">AMOUNT</label>
@@ -174,6 +212,14 @@
 </div>
 
 <div id="printArea" class="print-area"></div>
+
+<div id="budgetPopup" class="modal-overlay" hidden>
+  <div class="modal-box">
+    <div class="modal-title" id="budgetPopupTitle">—</div>
+    <div class="modal-message" id="budgetPopupMessage">—</div>
+    <button type="button" class="add-btn" id="budgetPopupOkBtn">OK</button>
+  </div>
+</div>
 
 <script src="qrcode.js"></script>
 <script src="app.js"></script>
